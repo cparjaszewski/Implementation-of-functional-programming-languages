@@ -1,0 +1,207 @@
+Spis rzeczy:
+
+	0. Modu³ Utils
+	1. Abstrakcyjne drzewo rozbioru + Preludium Standardowe
+	2. Pretty Printer
+	3. Parser
+	4. Mark 1 - 5
+	5. G-Mashine, czyli Maszyna G
+	6. Instrukcje z Maszyny G
+	7. Przyk³ady i wyk³ady z Maszyn¹ G w tle:)
+	8.
+	9.
+	10.
+	
+Treœæ
+
+Ad 0.
+Ad 1.
+Ad 2.
+Ad 3.
+Ad 4.
+Ad 5. G-Mashine, czyli Maszyna G
+	a) Idea
+			+ G³ówn¹ ide¹ maszyny G, jest to aby ka¿y z superkombinatorów zamieniæ na ci¹g instrukcji - pseudopodstawowych. Moc¹ tych¿e instrukcji jest stosunkowo szybki czas wykonywania.
+			+ Nie ma potrzebny "trawersowania" jak w przypadku template instantiation drzewa aplikacji, gdy¿ wszystko odbywa siê ju¿ na etapie translacji ('magicznie')
+			+ Wykonywanie siê programu (mo¿na to nazwaæ obliczaniem siê) podzielone zostaje na dwa etapy. 
+					- Pierwszym etapem jest stworzenie poœredniej formy aplikacji, tworzonej w czasie kompilacji
+					- Drugi etap poprzednio przygotowana forma poœrednia zostaje wykonana (w tzw. czasie wykonywania czyli 'run-time')
+			+ Priorytetem, czyli g³ównym za³o¿eniem u¿ywania podejœcia maszyny G jest to, aby zamieniæ kod Ÿród³owy w ci¹g instrukcji - podobnie jak w .NET do 'byte-kodu'. Powstaje wówczas pewna warstwa abstrakcji nie zale¿na od konkretnej maszyny, na której odpalany jest program.
+				
+	b) Przyk³ady
+			+ Rozwa¿my funkcjê:
+					
+					f g x = K (g x)
+					
+				Zostanie ona przet³umaczona do ci¹gu instrukcji maszyny G:
+				
+					Push 1
+					Push 1
+					Mkap
+					Pushglobal K
+					Mkap
+					Slide 3
+					Unwind
+					
+			+ Pierwotna zasada dzia³a Maszyny G, czyli pobieranie adresu g³ównego superkombinatora i 'rozwijanie krêgos³upa' jest taka jak do tej pory, kolejno na stosie odk³adamy
+				adresy argumentów tak d³ugo a¿ dojdziemy do nazwy superkombinatora.
+	c) Zasady dzia³ania:
+			+ Maszyna skoñczy³a swoj¹ pracê, gdy na stosie pozostaje pojedynczy element, który jest wskaŸnikiem (sprawdzimy to na stercie) do liczby ca³kowitej.
+			+ W przeciwnym wypadku wykonujemy instrukcjê Unwind na wierzcho³kach w naszym drzewie, które s¹ typu aplikacyjnego tak d³ugo, a¿ natrafimy na wierzcho³ek, który jest superkombinatorem
+	d) Ewaluator:
+			+ Ewaluator rozwa¿amy pod wzglêdem obliczania superkombinatorów (leniwych) oraz tzw. operacji prymitywnych (gorliwych)
+			+ Stanem ewaluatora jest para, która sk³ada siê z ci¹gu operacji oraz stosu liczb. Znane s¹ nastêpuj¹ce zasady tranzycji:
+				- [] 				 		[n]		= > []		        n
+				- (INum n):i  	 ns 	= >  i				 n:ns
+				- IPlus:i  n0:n1:ns  	= >  i (n1 + n0):ns
+				- IMult:i  n0:n1:ns   = >  i (n1 * n0):ns
+			+ Ewaluator ma docelowo zwróciæ parê, która sk³ada siê z pustego ci¹gu instrukcji do wykonania (ju¿ wszystko zrobiliœmy) oraz wartoœci obliczonej
+	e) Compilator (generator instrukcji postfiksowego kodu):
+			+ Aby wygenerowaæ ci¹g kodu dla wyra¿enia musimy zdefiniowaæ swój kompilator. Bierze on jako argument wyra¿enie a zwraca ci¹g instrukcji, które jak ³atwo siê domyœliæ wykonanie jedna po drugiej dadz¹ oczekiwany wynik.
+			+ Trik, który zamienia abstrakcyjne drzewo rozbioru w p³ask¹ listê instrukcji do wykonania. Wydaje siê, ¿e ta operacja, o ile program jest poprawny, dzia³a w obie strony, czyli jest izomorfizmem. Nazywamy to sp³aszczaniem.
+			+ Zadanko 1 (dowód). 
+					- TREŒÆ: U¿ywaj¹c indukcji strukturalnej, przeprowadŸ dowód, ¿e obliczanie postfiksowe wyra¿eñ arytmetycznych daje ten sam wynik, co obliczanie na strukturze drzewiastej. To znaczy, dowiedŸ ¿e dla ka¿dego wyra¿enia e typu aExpr zachodzi(rozwi¹zanie tego zadania nazywa siê dowodem kongruencji):
+					
+					aInterpret e = aEval (aCompile e, [])
+					
+					- DOWÓD: 
+					1. Gdy e jest typu Inum n to:
+						L = aInterpret (Inum n) = n
+						P = aEval (aCompile (Inum n), []) = aEval ([INum n],[]) = aEval([],n) = n
+					2. Za³ó¿my, ¿e dla ka¿dej pary wyra¿eñ e0 i e1, które s¹ indukcyjnie prostsze zachodzi równoœæ. Wówczas na mocy za³o¿enia indukcyjnego mamy:
+						a) Dodawanie:
+									Za³o¿enie:
+										aInterpret e1 = aEval( aCompile e1, [])
+										aInterpret e2 = aEval( aCompile e2, [])
+							
+							L = aInterpret (Plus e1 e2) = aInterpret e1 + aInterpret e2
+							P = aEval (aCompile(Plus e1 e2), []) = aEval( aCompile e1 ++ aCompile e2 ++ [IPlus], [])
+							
+							Wydaje siê, ¿e ma to coœ wspólnego z Teori¹ Kategorii, czyli ¿e dzia³ania tutaj s¹ ³¹czne (co jest oczywiste, bo wykonujemy ci¹g instrukcji):
+							
+							aEval (IPlus, (aInterpret e1):(aInterpret e2)) = aEval ([], (aInterpret e1)+(aInterpret e2)) = aInterpret e1 + aInterpret e2
+							
+						b) Mno¿enie: analogicznie
+			+ Zadanko 2(dowód). Dowód jak wy¿ej, dla let a mo¿e nawet dla letrec.
+					- Taka pierwsza intuicja odnoœnie letrec'a, ¿e ciê¿ko chyba bêdzie explicite zamieniæ superkombinator u¿ywaj¹cy tej instrukcji na skoñczony ci¹g instrukcji - wystarczy podaæ letrec, który siê zapêtla. W przypadku let'a nie ma problemu, jest to po prostu zdefiniowanie makra, ¿eby siê nie powtarzaæ, nic nowego nie wnosi.
+					- Z kolejnych instuicji, nale¿y zastanowiæ siê krótko, czy fakt ¿e let u¿ywa zmiennych lokalnych czegoœ nie psuje. W szczególnoœci, czy do raz skompilowanego kodu potem ktoœ siê z zewn¹trz nie bêdzie chcia³ odwo³aæ i czy przestrzeñ nazw w tym wypadku jest dobrze obs³ugiwana.
+					
+		f) Zastosowania kodu postfiksowego:
+				+ Mo¿emy u¿yæ podobnej techniki aby stworzyæ cia³o superkombinatora. W tym przypadku wartoœciami na stosie bêd¹ adresy podwyra¿eñ, które s¹ instancjowane.
+				+ Operacje konstruuj¹ce szablony ró¿ni¹ siê od prostych przyk³adów w przypadku dodawania i mno¿enia prostych wyra¿eñ z tego wzglêdu, ¿e maj¹ efekt uboczny, w postaci alokowania wêz³ów na stercie.
+				+ Jako przyk³ad mo¿na podaæ instrukcjê MKapp, która to tworzy wêze³ aplikacji (@) na stercie, bior¹c dwa ostatnie adresy ze stosu. Pozostawia na szczycie stosu wskaŸnik do nowo utworzonego wêz³a aplikacji.
+				+ Nie ma powodu, by tworzyæ nowy stos adresów, gdy¿ nasza maszyna template-instantiation ma ju¿ wewn¹trz swój w³asny stos. Jakkolwiek, warto zapamiêtaæ nastêpuj¹c¹ uwagê, odnoœnie u¿ywania stosu:
+					- "Mapa miejsc na stosie - z samej natury stosu - odwo³uj¹ca siê do nazw zmiennych bêdzie siê zmieniaæ wraz z tym, jak bêdziemy wrzucaæ i œci¹gaæ elementy ze stosu. Dlatego musimy œledziæ œcie¿kê tych zmian w czasie kompilacji wyra¿eñ"
+					
+		g) 'Sprz¹tanie' po wykonanie instancjacji:
+				+ Gdy wykonamy instancjacjê cia³a superkombinatora, ostatni¹ z czynnoœci jak¹ bêdziemy musieli wykonaæ jest usuniêcie œmieci ze stosu, które s¹ adresami do argumentów. Poniewa¿ wykonaliœmy ju¿ wszystkie obliczenia	a nasz¹ dotychczasow¹ strategi¹ by³o wrzucanie a nie œci¹ganie ze stosu, wykonujemy operacjê Slide z wartoœci¹ n+1 , gdzie n to arnoœæ instanciowanego superkombinatora. Wszystko upraszcza siê wówczas do konstrukcji:
+				
+					Je¿eli kodem funkcji jest:
+					
+						f x1 ... xn = e is:
+						
+					Wówczas ci¹g operacji wygl¹da nastêpuj¹co:
+					
+						<kod potrzebny do instanciowania wyra¿enia e>
+						Slide n+1
+						Unwind				
+		h) Mark 1 - czyli minimalistyczna Maszyna G. Ta wersja bêdzie wykonywaæ update'ów oraz wyra¿eñ arytmetycznych, ale easy-dzieci kolejne wersje bêd¹. Coœ jak podejœcie do klientów:)
+				+ Podejœæie jest jak zawsze, czyli wszystko kryje siê pod funkcj¹ run. 
+				+ Kolejny aspekt w tym podejœciu jest taki, ¿e stosujemy dwa rodzaje (coœ jak Property w .NET) dostêpu do naszego stanu. Get i Put (set). Nie wymaga komentarza - u¿ywamy prefiksów odpowiednio 'get' oraz 'put'.
+		h) Abstrakcyjne drzewo jest zdumiewaj¹co proste, podobne jak ostatnio
+		i) Ewalutator, podobnie jak ostatnio, generuje listê stanów maszyny. Mo¿liwe, ¿e jest to lekko nieoptymalne, natomiast fajnie siê odrobacza proste programy
+
+
+Ad 6. Instrukcje z Maszyny G
+	a) Push n - Instrukcja n ('w³ó¿ na stos n-ty element') u¿ywa adresowania wzglêdem wierzcho³ka stosu (0 - 1 od wierzho³ka, 1 - drugi od wierzcho³ka). Instrukcja ta przyjmuje za parametr nieujemn¹ liczbê n, która mówi w jakiej odleg³oœci od wierzcho³ka stosu	powinniœmy umieœciæ argument 
+	UWAGA - Push 0 wrzuci wartoœæ jeden pod szczytem, a nie skopiuje elementu z wierzho³ka stosu.
+	b) MKapp - Instrukcja pobiera dwa ostatnie adresy ze stosu, tworz¹c aplikacjê wy¿szego argumentu do ni¿szego, pozostawiaj¹c na stosie wskaŸnik do wyniku.
+	c) Pushglobal - Instrukcja wrzuca na stos adres do jednego z predefiniowanych superkombinatorów 
+	d) Slide n - Instrukcja usuwa ze stosu n adresów, które siê tam znajdowa³y omijaj¹c ten, który jest wierzcho³kiem, czyli pocz¹wszy od tego zaraz za wierzcho³kiem.
+	e) Unwind - Instrukcja mówi maszynie, by kontynuwa³a obliczenia. (lub innymi s³owym Maszyna G jest pewna, ¿e postawi³a aplikacjê w takim stane, ¿e wykonywanie kolejnych instrukcji ma sens.)
+	f) Pushint wrzuca sta³¹ liczbow¹ na stos
+	
+Ad 7. Rozwa¿my program w formie superkombinatorowej
+	$from n = n : $from ($succ n)
+	$succ n = n + 1
+	$prog = $from ($succ 0)
+	
+	Bêdê stara³ siê krok po kroku zrozumieæ jak wykona taki program nasza maszyna:
+	
+	1. pushglobal $prog
+			====S=T=A=C=K==
+					+ ----------$prog
+			===============
+
+	2. eval
+	====S=T=A=C=K==
+			+ ----------$prog
+	===============
+	
+	3. print
+	4. halt
+		KOD $prog:
+			1. pushint 0
+			====S=T=A=C=K==
+					+ ----------$prog
+					+ ---------- 0
+			===============			
+			
+			2. pushglobal succ
+			====S=T=A=C=K==
+					+ ----------$prog
+					+ ---------- 0
+					+ ---------- succ
+			===============			
+			
+			3. mkap
+			====S=T=A=C=K==
+					+ ----------$prog
+					+ ---------- @
+					---------   / \
+					+ ------ succ  0
+			===============			
+
+			4. pushglobal $from
+			====S=T=A=C=K==
+					+ ----------$prog
+					+ ---------- @
+					---------   / \
+					+ ------ succ  0
+					-------- \
+					------ $from
+			===============			
+
+			5. mkap
+			====S=T=A=C=K==
+					+ ----------$prog
+					+ ---------- @
+					---------   / \
+					+ ------ from  @
+					------------- / \
+					+ ----------succ  0
+			===============			
+
+/* Wydaje siê, ¿e w³aœnie zinstancjowaliœmy $prog, wiêc nie chcemy go ju¿ na stosie */
+			6. update 1
+			====S=T=A=C=K==
+					+ ---------- @
+					---------   / \
+					+ ------ from  @
+					------------- / \
+					+ ----------succ  0
+			===============			
+
+/*  */
+			7. unwind
+			====S=T=A=C=K==
+					+ ---------- @
+					---------   / \
+					+ -----# from  @#
+					------------- / \
+					+ ----------succ  0
+			===============			
+			
+Ad 8.
+Ad 9.
+Ad 10.

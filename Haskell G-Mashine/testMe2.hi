@@ -1,0 +1,2 @@
+square x y = x ;
+main = square 2 20;

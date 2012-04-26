@@ -1,0 +1,25 @@
+quicksort x = case x y of 
+              <1> x -> 25;
+              <2> y -> 34
+              ;
+
+f x = \x  . x x ;
+
+main x = let y=5+2 ; y=as 6+2 in x y z
+              ;
+   y = (5)     
+;
+
+isred c = case c of
+               <1> -> True;
+               <2> -> False;
+               <3> -> case u of
+                   <1> -> Kazzik;
+                   <2> -> elvis;
+                   <3> a b c -> case u of
+			   <1> -> Kazzik;
+			   <2> -> elvis;
+			   <3> a b c -> case u of
+			    <1> -> Kazzik;
+			   <2> -> elvis;
+			   <3> a b c -> a b c
